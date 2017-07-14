@@ -1,6 +1,5 @@
 # bind-event.js
-为`object/dom`绑定事件，提供友好的API，支持事件的绑定、卸载、触发，还支持命名空间以方便卸载和触发；
->为`object`绑定事件时，不限制JavaScript Runtime（浏览器/Node/其他）；为`dom`绑定事件时，仅支持浏览器端。
+为`dom/object`绑定事件，提供友好的API，支持事件的绑定、卸载、触发，还支持命名空间以方便卸载和触发；
 
 
 安装
@@ -34,6 +33,9 @@ E(btn).trigger('click');
 
 注意事项
 ------
+- 使用`trigger`方法触发`dom`的事件时，会触发本库绑定的对应类型的事件，同时也会触发其他库绑定的对应类型的事件；
+- 使用`off`卸载`dom`事件时，只会卸载本类库绑定的对应类型的事件；
+- 为`object`绑定事件时，不限制JavaScript Runtime（浏览器/Node/其他）；为`dom`绑定事件时，仅支持浏览器端；
 - 使用`选择器`方式绑定事件时，请注意浏览器是否支持`document.querySelector`；
 - 为`dom`绑定事件时，底层实现优先使用`addEventListener`，不支持的情况下使用 `attachEvent`；
 

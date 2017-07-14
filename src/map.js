@@ -1,4 +1,4 @@
-export default class ShimMap {
+export default Map ? Map : class ShimMap {
     constructor() {
         var store = {},
             keys = [],

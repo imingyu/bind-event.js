@@ -15,6 +15,8 @@ var init = obj => {
 }
 
 var exec = (runtimeTarget, bindingTarget, type, eventArgs) => {
+    var start = new Date().getTime();
+    console.log('exec.start:' + start);
     var binder = $map.get(bindingTarget),
         prop, handlerItem, result, ns;
     for (prop in binder.handlers) {
@@ -40,10 +42,19 @@ var exec = (runtimeTarget, bindingTarget, type, eventArgs) => {
             }
         }
     }
+    var end = new Date().getTime();
+    console.log('exec.end:' + end);
+    console.log('exec.total:' + (end - start));
     return result;
 }
 
 export var on = (obj, type, handler) => {
+    var namespace = "___default___",
+        index = type.indexOf('.');
+    if (index != -1) {
+        namespace = type.substr(index + 1, type.length);
+        type = type.substr(0, index);
+    }
     var binder = $map.get(obj);
     if (!$map.has(obj)) {
         init(obj);
@@ -53,12 +64,6 @@ export var on = (obj, type, handler) => {
         }
     }
 
-    var namespace = "___default___",
-        index = type.indexOf('.');
-    if (index != -1) {
-        namespace = type.substr(index + 1, type.length);
-        type = type.substr(0, index);
-    }
     binder.handlers[type] = binder.handlers[type] || {};
     if (namespace === '___default___') {
         //顶级命名支持多次绑定，如：click

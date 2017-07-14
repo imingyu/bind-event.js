@@ -10,6 +10,8 @@
 
 <body>
     <button id="btn" type="button">点击</button>
+    <button id="btn2" type="button">点击2</button>
+    <button id="btn3" type="button">性能测试</button>
     <script src="./dist/index.js"></script>
     <script>
         window.onload = function () {
@@ -18,6 +20,21 @@
             });
             E("#btn").on('click.user', function (e) {
                 console.log('click.user', e);
+            });
+
+            var btn2 = E('#btn2'),
+                isBinded = false;
+            E("#btn3").on('click', function () {
+                if (isBinded) return;
+                for (var i = 0; i < 1000; i++) {
+                    (function (i) {
+                        btn2.on('click.' + i, function () {
+                            console.log("btn2." + i);
+                        });
+                    })(i);
+                }
+                isBinded = true;
+                console.log(`binded.`);
             });
         }
     </script>

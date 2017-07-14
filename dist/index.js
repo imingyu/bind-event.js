@@ -46,7 +46,7 @@ var createClass = function () {
   };
 }();
 
-var ShimMap = function ShimMap() {
+var ShimMap = Map ? Map : function ShimMap() {
     classCallCheck(this, ShimMap);
 
     var store = {},
@@ -184,6 +184,8 @@ var init = function init(obj) {
 };
 
 var exec = function exec(runtimeTarget, bindingTarget, type, eventArgs) {
+    var start = new Date().getTime();
+    console.log('exec.start:' + start);
     var binder = $map.get(bindingTarget),
         prop,
         handlerItem,
@@ -212,10 +214,19 @@ var exec = function exec(runtimeTarget, bindingTarget, type, eventArgs) {
             }
         }
     }
+    var end = new Date().getTime();
+    console.log('exec.end:' + end);
+    console.log('exec.total:' + (end - start));
     return result;
 };
 
 var on = function on(obj, type, handler) {
+    var namespace = "___default___",
+        index = type.indexOf('.');
+    if (index != -1) {
+        namespace = type.substr(index + 1, type.length);
+        type = type.substr(0, index);
+    }
     var binder = $map.get(obj);
     if (!$map.has(obj)) {
         init(obj);
@@ -225,12 +236,6 @@ var on = function on(obj, type, handler) {
         }
     }
 
-    var namespace = "___default___",
-        index = type.indexOf('.');
-    if (index != -1) {
-        namespace = type.substr(index + 1, type.length);
-        type = type.substr(0, index);
-    }
     binder.handlers[type] = binder.handlers[type] || {};
     if (namespace === '___default___') {
         //顶级命名支持多次绑定，如：click
