@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>demo</title>
+</head>
+
+<body>
+    <button id="btn" type="button">点击</button>
+    <script src="./dist/index.js"></script>
+    <script>
+        window.onload = function () {
+            E("#btn").on('click', function (e) {
+                console.log('click', e);
+            });
+            E("#btn").on('click.user', function (e) {
+                console.log('click.user', e);
+            });
+        }
+    </script>
+</body>
+
+</html>
