@@ -1,0 +1,29 @@
+{
+    "name": "bind-event.js",
+    "version": "0.1.0",
+    "description": "为element绑定事件，提供友好的API，支持原生和自定义事件的绑定、卸载、触发，还支持命名空间以方便卸载和触发。",
+    "main": "dist/index.js",
+    "scripts": {
+        "test": "mocha test/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/imingyu/bind-event.js.git"
+    },
+    "keywords": [
+        "bind",
+        "event",
+        "bind-event",
+        "dom"
+    ],
+    "author": {
+        "name": "Mingyu Yuan",
+        "email": "mingyuhisoft@163.com",
+        "url": "https://github.com/imingyu"
+    },
+    "license": "BSD-3-Clause",
+    "bugs": {
+        "url": "https://github.com/imingyu/bind-event.js/issues"
+    },
+    "homepage": "https://github.com/imingyu/bind-event.js#readme"
+}
