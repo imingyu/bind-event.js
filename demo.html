@@ -15,6 +15,7 @@
     <script src="./dist/index.js"></script>
     <script>
         window.onload = function () {
+            function fun() { };
             E("#btn").on('click', function (e) {
                 console.log('click', e);
             });
@@ -29,12 +30,11 @@
                 for (var i = 0; i < 1000; i++) {
                     (function (i) {
                         btn2.on('click.' + i, function () {
-                            console.log("btn2." + i);
+                            fun("btn2." + i);
                         });
                     })(i);
                 }
                 isBinded = true;
-                console.log(`binded.`);
             });
         }
     </script>

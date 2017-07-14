@@ -65,6 +65,7 @@ export default Map ? Map : class ShimMap {
             }
             return val;
         }
+        /*
         this.clear = function () {
             store = {};
             keys.length = 0;
@@ -82,6 +83,6 @@ export default Map ? Map : class ShimMap {
             for (var keyIndex in map) {
                 cb.call(context, values[map[keyIndex]], keys[keyIndex], self);
             }
-        }
+        }*/
     }
 };

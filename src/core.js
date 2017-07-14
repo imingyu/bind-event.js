@@ -3,65 +3,73 @@ import * as util from './util.js';
 
 var $map = new ShimMap();
 
-var init = obj => {
-    $map.set(obj, {
-        target: obj,
-        ts: new Date().getTime(),
-        handlers: {},
-        realHandler: function (event) {
-            return exec(this, obj, event.type, Array.from(arguments));
+var getBinder = obj => {
+    var binder = obj.$$e || $map.get(obj);
+    if (!binder) {
+        binder = {
+            target: obj,
+            ts: new Date().getTime(),
+            handlers: {},
+            realHandler: function (event) {
+                return exec(this, obj, event.type, Array.from(arguments));
+            }
+        };
+        if (util.isDom(obj)) {
+            obj.$$e = binder;
         }
-    });
+        $map.set(obj, binder);
+    }
+    return binder;
 }
 
+var decomposeEventName = function (eventName) {
+    var namespace = "___default___",
+        index = eventName.indexOf('.');
+    if (index != -1) {
+        namespace = eventName.substr(index + 1, eventName.length);
+        eventName = eventName.substr(0, index);
+    }
+    return {
+        type: eventName,
+        namespace: namespace
+    }
+}
 var exec = (runtimeTarget, bindingTarget, type, eventArgs) => {
-    var start = new Date().getTime();
-    console.log('exec.start:' + start);
-    var binder = $map.get(bindingTarget),
-        prop, handlerItem, result, ns;
-    for (prop in binder.handlers) {
-        if (prop === type) {
-            var events = binder.handlers[type];
-            if (events) {
-                for (ns in binder.handlers[type]) {
-                    handlerItem = events[ns];
-                    if (Array.isArray(handlerItem)) {
-                        handlerItem.forEach(item => {
-                            var res = item.apply(runtimeTarget, eventArgs);
-                            if (typeof res === 'boolean') {
-                                result = typeof result === 'boolean' ? result && res : res;
-                            }
-                        })
-                    } else {
-                        var res = handlerItem.apply(runtimeTarget, eventArgs);
-                        if (typeof res === 'boolean') {
-                            result = typeof result === 'boolean' ? result && res : res;
-                        }
-                    }
+    if(process.env.NODE_ENV !== 'production'){
+        console.log(new Date().getTime());
+    }
+    var binder = bindingTarget.$$e || $map.get(bindingTarget),
+        handlerItem, result, ns,
+        events = binder.handlers[type];
+    for (ns in events) {
+        handlerItem = events[ns];
+        if (Array.isArray(handlerItem)) {
+            handlerItem.forEach(item => {
+                var res = item.apply(runtimeTarget, eventArgs);
+                if (typeof res === 'boolean') {
+                    result = typeof result === 'boolean' ? result && res : res;
                 }
+            })
+        } else {
+            var res = handlerItem.apply(runtimeTarget, eventArgs);
+            if (typeof res === 'boolean') {
+                result = typeof result === 'boolean' ? result && res : res;
             }
         }
     }
-    var end = new Date().getTime();
-    console.log('exec.end:' + end);
-    console.log('exec.total:' + (end - start));
+    if(process.env.NODE_ENV !== 'production'){
+        console.log(new Date().getTime());
+    }
     return result;
 }
 
-export var on = (obj, type, handler) => {
-    var namespace = "___default___",
-        index = type.indexOf('.');
-    if (index != -1) {
-        namespace = type.substr(index + 1, type.length);
-        type = type.substr(0, index);
-    }
-    var binder = $map.get(obj);
-    if (!$map.has(obj)) {
-        init(obj);
-        binder = $map.get(obj);
-        if (util.isDom(obj)) {
-            util.bind(obj, type, binder.realHandler);
-        }
+export var on = (obj, eventName, handler) => {
+    var typeInfo = decomposeEventName(eventName),
+        namespace = typeInfo.namespace,
+        type = typeInfo.type,
+        binder = getBinder(obj);
+    if (util.isDom(obj) && !binder.handlers[type]) {
+        util.bind(obj, type, binder.realHandler);
     }
 
     binder.handlers[type] = binder.handlers[type] || {};
@@ -75,16 +83,14 @@ export var on = (obj, type, handler) => {
     }
 }
 
-export var off = (obj, type) => {
-    if (!$map.has(obj)) return;
-    var binder = $map.get(obj),
-        namespace = "___default___",
-        index = type.indexOf('.');
-    if (index != -1) {
-        namespace = type.substr(index + 1, type.length);
-        type = type.substr(0, index);
-    }
-    if (binder.handlers[type]) {
+export var off = (obj, eventName) => {
+    var typeInfo = decomposeEventName(eventName),
+        namespace = typeInfo.namespace,
+        type = typeInfo.type,
+        binder = getBinder(obj),
+        events = binder.handlers[type];
+
+    if (binder && events) {
         if (namespace === "___default___") {
             delete binder.handlers[type];
             if (util.isDom(obj)) {
@@ -92,7 +98,7 @@ export var off = (obj, type) => {
             }
             $map.delete(obj);
         } else {
-            delete binder.handlers[type][namespace];
+            delete events[namespace];
         }
     }
 }
