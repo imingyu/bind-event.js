@@ -1,27 +1,3 @@
-import ShimMap from './map.js';
-import * as util from './util.js';
-
-var $map = new ShimMap();
-
-var getBinder = obj => {
-    var binder = obj.$$e || $map.get(obj);
-    if (!binder) {
-        binder = {
-            target: obj,
-            ts: new Date().getTime(),
-            handlers: {},
-            realHandler: function (event) {
-                return exec(this, obj, event.type, Array.from(arguments));
-            }
-        };
-        if (util.isDom(obj)) {
-            obj.$$e = binder;
-        }
-        $map.set(obj, binder);
-    }
-    return binder;
-}
-
 var decomposeEventName = function (eventName) {
     var namespace = "___default___",
         index = eventName.indexOf('.');
@@ -34,74 +10,77 @@ var decomposeEventName = function (eventName) {
         namespace: namespace
     }
 }
-var exec = (runtimeTarget, bindingTarget, type, eventArgs) => {
-    if(process.env.NODE_ENV !== 'production'){
-        console.log(new Date().getTime());
-    }
-    var binder = bindingTarget.$$e || $map.get(bindingTarget),
-        handlerItem, result, ns,
-        events = binder.handlers[type];
-    for (ns in events) {
-        handlerItem = events[ns];
-        if (Array.isArray(handlerItem)) {
-            handlerItem.forEach(item => {
-                var res = item.apply(runtimeTarget, eventArgs);
+
+var mergeBinder = (binder) => {
+    binder.ts = binder.ts || new Date().getTime();
+    binder.handlers = binder.handlers || {};
+    binder.realHandler = function (event) {
+        var runtimeTarget = this,
+            type = event.type,
+            eventArgs = Array.from(arguments),
+            typeHandlers = binder.handlers[type],
+            handlerItem, result, ns;
+
+
+        for (ns in typeHandlers) {
+            handlerItem = typeHandlers[ns];
+            if (Array.isArray(handlerItem)) {
+                handlerItem.forEach(item => {
+                    var res = item.apply(runtimeTarget, eventArgs);
+                    if (typeof res === 'boolean') {
+                        result = typeof result === 'boolean' ? result && res : res;
+                    }
+                })
+            } else {
+                var res = handlerItem.apply(runtimeTarget, eventArgs);
                 if (typeof res === 'boolean') {
                     result = typeof result === 'boolean' ? result && res : res;
                 }
-            })
-        } else {
-            var res = handlerItem.apply(runtimeTarget, eventArgs);
-            if (typeof res === 'boolean') {
-                result = typeof result === 'boolean' ? result && res : res;
             }
         }
-    }
-    if(process.env.NODE_ENV !== 'production'){
-        console.log(new Date().getTime());
-    }
-    return result;
-}
-
-export var on = (obj, eventName, handler) => {
-    var typeInfo = decomposeEventName(eventName),
-        namespace = typeInfo.namespace,
-        type = typeInfo.type,
-        binder = getBinder(obj);
-    if (util.isDom(obj) && !binder.handlers[type]) {
-        util.bind(obj, type, binder.realHandler);
-    }
-
-    binder.handlers[type] = binder.handlers[type] || {};
-    if (namespace === '___default___') {
-        //顶级命名支持多次绑定，如：click
-        binder.handlers[type][namespace] = binder.handlers[type][namespace] || [];
-        binder.handlers[type][namespace].push(handler);
-    } else {
-        //含子命名空间不支持多次绑定，如：click.user
-        binder.handlers[type][namespace] = handler;
+        return result;
     }
 }
 
-export var off = (obj, eventName) => {
-    var typeInfo = decomposeEventName(eventName),
-        namespace = typeInfo.namespace,
-        type = typeInfo.type,
-        binder = getBinder(obj),
-        events = binder.handlers[type];
+export default function (store) {
+    return {
+        on(obj, eventName, handler) {
+            var typeInfo = decomposeEventName(eventName),
+                namespace = typeInfo.namespace,
+                type = typeInfo.type;
 
-    if (binder && events) {
-        if (namespace === "___default___") {
-            delete binder.handlers[type];
-            if (util.isDom(obj)) {
-                util.unbind(obj, type, binder.realHandler);
+            var memory = store.get(obj);
+            if (!memory) {
+                store.map(obj, mergeBinder);
             }
-            $map.delete(obj);
-        } else {
-            delete events[namespace];
+            if (!memory.handlers[type]) {
+                store.bind(obj, type, namespace);
+            }
+
+            memory.handlers[type] = memory.handlers[type] || {};
+            memory.handlers[type][namespace] = memory.handlers[type][namespace] || [];
+            memory.handlers[type][namespace].push(handler);
+        },
+
+        off(obj, eventName) {
+            var typeInfo = decomposeEventName(eventName),
+                namespace = typeInfo.namespace,
+                type = typeInfo.type,
+                memory = store.get(obj, type, namespace);
+
+            if (memory && memory.handlers[type]) {
+                var events = memory.handlers[type];
+                if (namespace === "___default___") {
+                    delete memory.handlers[type];
+                    store.unbind(obj, type, namespace);
+                    store.remove(obj);
+                } else {
+                    delete events[namespace];
+                }
+            }
+        },
+        trigger(obj, type) {
         }
-    }
+    };
 }
 
-export var trigger = (obj, type) => {
-}
